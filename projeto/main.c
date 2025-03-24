@@ -126,7 +126,6 @@ TInfoAtomo reconhece_num(){
     char str_num[20];
     char *ini_num;
     info_num.atomo = ERRO;
-
     ini_num = entrada;
 // qo:
     if(isdigit(*entrada)){
