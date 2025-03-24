@@ -15,41 +15,80 @@ gcc miniLexico.c -Wall -Og -g -o miniLexico
 //Definições dos átomos
 typedef enum{
     ERRO,
+    EOS,
     IDENTIFICADOR,
-    NUMERO,
+    INTCONST,
+    INTCHAR,
     COMENTARIO,
-    
-    EOS
+    //Palavras reservadas
+    CHAR,
+    ELSE,
+    IF, 
+    INT,
+    MAIN,
+    READINT,
+    VOID,
+    WHILE,
+    WRITEINT,
+    //Delimitadores
+    ABRE_PARENTESES,
+    FECHA_PARENTESES,
+    ABRE_CHAVES,
+    FECHA_CHAVES,
+    VIRGULA,
+    PONTO_VIRGULA,
+    //Operadores
+    IGUAL, //==
+    MENOR,
+    MENOR_IGUAL,
+    ATRIBUICAO, //=
+    DIFERENTE,
+    MAIOR,
+    MAIOR_IGUAL,
+    MAIS,
+    MENOS,
+    MULTIPLICACAO,
+    DIVISAO,
+    AND,
+    OR    
     }TAtomo;
 
 typedef struct{
     TAtomo atomo;
     int linha;
-    float atributo_numero;
-    char atributo_ID[16];
+    union{
+        char lexema[16];  // Para identificadores (e possivelmente para palavras reservadas)
+        int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
+        char valorChar     // Para constantes de caractere (charconst)
+    }atributo
 }TInfoAtomo;
 
 
     //declaração de var globais
-char *strAtomo[]={"ERRO","IDENTIFICADOR","NUMERO","EOS"};
-char *entrada = "    \nvarx     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
+
+char *buffer = "    \nvarx     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
+// char *strAtomo[]={"ERRO","IDENTIFICADOR","NUMERO","EOS"};
 int contaLinha = 1;
 
 
+/*aaaa********************/
+
 // declaracao da funcao
 TInfoAtomo obter_atomo();
-TInfoAtomo reconhece_num();
 TInfoAtomo reconhece_id();
+TInfoAtomo reconhece_comentario();
+TInfoAtomo reconhece_charconst();
+TInfoAtomo reconhece_intconst();
 
 int main(void){
     TInfoAtomo info_atm;
     do{
         info_atm = obter_atomo();
         printf("%03d# %s | ", info_atm.linha, strAtomo[info_atm.atomo]);
-        if(info_atm.atomo == NUMERO){
-            printf("%.2f", info_atm.atributo_numero);
-        }
-        printf("\n");
+        // if(info_atm.atomo == NUMERO){
+        //     printf("%.2f", info_atm.atributo_numero);
+        // }
+        // printf("\n");
     }while (info_atm.atomo != ERRO && info_atm.atomo != EOS);
     printf("fim de análise léxica\n"); 
 

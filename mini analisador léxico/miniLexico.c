@@ -12,6 +12,8 @@ gcc miniLexico.c -Wall -Og -g -o miniLexico
 #include <stdlib.h>
 #include <string.h>
 
+
+
 //Definições dos átomos
 typedef enum{
     ERRO,
