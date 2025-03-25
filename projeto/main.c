@@ -56,11 +56,11 @@ typedef enum{
 typedef struct{
     TAtomo atomo;
     int linha;
-    union{
-        char lexema[16];  // Para identificadores (e possivelmente para palavras reservadas)
-        int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
-        char valorChar     // Para constantes de caractere (charconst)
-    }atributo
+
+    char lexema[16];  // Para identificadores (e possivelmente para palavras reservadas)
+    int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
+    char valorChar;     // Para constantes de caractere (charconst)
+    char atributo_comentario;
 }TInfoAtomo;
 
 
@@ -178,6 +178,67 @@ TInfoAtomo reconhece_int_const(){
 
 
 TInfoAtomo reconhece_comentario(){
+
+    TInfoAtomo info_comentario;
+    char str_com[20];
+    char *ini_com;
+    info_comentario.atomo = ERRO;
+    ini_com = buffer;
+// qo:
+    if(*buffer == '/'){
+        buffer++; 
+        goto q1;
+    }
+    return info_comentario;
+q1:
+    if(*buffer == '*'){
+        buffer++; 
+        goto q2;
+    }
+    else if(*buffer == '/'){
+        buffer++; 
+        goto q3;
+    }
+    return info_comentario;
+q2:
+    if(*buffer == '*'){
+        buffer++;
+        goto q4;
+    }else{
+        buffer++;
+        goto q2;
+    }
+    return info_comentario;
+q3:
+    if(isdigit(*buffer)){
+        buffer++;
+        goto q3;
+    }
+    else if(isalpha(*buffer)){
+        return info_num;
+    }
+
+q4:
+    if(*buffer == '/'){
+        return info_comentario;
+    }else{
+        buffer++;
+        goto q2;
+    }
+    return info_comentario;
+
+
+
+    info_comentario.atomo = COMENTARIO;
+
+
+
+    //man strncpy
+    strncpy(str_com, ini_com, buffer - ini_com);
+    str_com[buffer - ini_com]='\0';
+    info_comentario.atributo_comentario = atof(str_com);
+    return info_comentario;
+
 
 }
 
