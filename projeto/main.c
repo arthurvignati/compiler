@@ -1,3 +1,12 @@
+/******************************************************************************
+
+Welcome to GDB Online.
+  GDB online is an online compiler and debugger tool for C, C++, Python, PHP, Ruby, 
+  C#, OCaml, VB, Perl, Swift, Prolog, Javascript, Pascal, COBOL, HTML, CSS, JS
+  Code, Compile, Run and Debug online from anywhere in world.
+
+*******************************************************************************/
+
 /*
 Implementa uma função que recebe um ponteiro para vetor de caractere por
 parâmetro (somente uma ponteiro), veja a declaração da função:
@@ -12,6 +21,8 @@ gcc miniLexico.c -Wall -Og -g -o miniLexico
 #include <stdlib.h>
 #include <string.h>
 
+
+//######## DECLARACOES LEXICO
 //Definições dos átomos
 typedef enum{
     ERRO,
@@ -64,13 +75,40 @@ typedef struct{
 }TInfoAtomo;
 
 
-    //declaração de var globais
-
+//declaração de var globais
 char *buffer = "    \nvarx     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
-// char *strAtomo[]={"ERRO","IDENTIFICADOR","NUMERO","EOS"};
+char *strAtomo[]={"ERRO","IDENTIFICADOR", "INTCONST","INTCHAR",
+    "COMENTARIO",
+    "CHAR",
+    "ELSE",
+    "IF", 
+    "INT",
+    "MAIN",
+    "READINT",
+    "VOID",
+    "WHILE",
+    "WRITEINT",
+    "ABRE_PARENTESES",
+    "FECHA_PARENTESES",
+    "ABRE_CHAVES",
+    "FECHA_CHAVES",
+    "VIRGULA",
+    "PONTO_VIRGULA",  
+    "==",
+    "<",
+    "<=",
+    ">=",
+    ">",
+    "-",
+    "*",
+    "/",
+    "AND",
+    "OR","EOS"};
+    
+    
+
+
 int contaLinha = 1;
-
-
 /*aaaa********************/
 
 // declaracao da funcao
@@ -79,9 +117,30 @@ TInfoAtomo reconhece_id();
 TInfoAtomo reconhece_comentario();
 TInfoAtomo reconhece_charconst();
 TInfoAtomo reconhece_intconst();
+//######## FIM DAS DECLARACOES LÉXICO 
+
+
+
+
+//######## DECLARACOES SINTATICO 
+// variavel global
+TAtomo lookahead;
+TInfoAtomo info_atomo;
+
+
+// E ::= a | b | +EE | *EE
+
+// SINTATICO - prototipacao de funcao
+// void E(); 
+void consome( TAtomo atomo );
+
 
 int main(void){
-    TInfoAtomo info_atm;
+    
+    info_atomo = obter_atomo();
+    lookahead = info_atomo.atomo;
+    
+    
     do{
         info_atm = obter_atomo();
         printf("%03d# %s | ", info_atm.linha, strAtomo[info_atm.atomo]);
@@ -107,11 +166,16 @@ TInfoAtomo obter_atomo(void){
     if (*entrada == '\0'){
         info_atomo.atomo = EOS;
     }
-    if(isdigit(*entrada)){
-        info_atomo = reconhece_num();
-    }
-    else if(islower(*entrada)){
+    if(*entrada == '/'){
+        info_atomo.atomo = reconhece_comentario();
+        
+    }else if(*entrada == '_' || isalpha(*entrada))){
         info_atomo = reconhece_id();
+    }
+    else if(){
+        info_atomo = reconhece_intconst();
+    }else if(){
+        info_atomo = reconhece_charconst()
     }
     info_atomo.linha = contaLinha;
     return info_atomo;
@@ -121,58 +185,12 @@ TInfoAtomo obter_atomo(void){
 // implementacao da funcao
 //NUMERO -> DIGITO+ .DIGITO+ 
 
-TInfoAtomo reconhece_num(){
-    TInfoAtomo info_num;
-    char str_num[20];
-    char *ini_num;
-    info_num.atomo = ERRO;
-    ini_num = entrada;
-// qo:
-    if(isdigit(*entrada)){
-        entrada++; 
-        goto q1;
-    }
-    return info_num;
-q1:
-    if(isdigit(*entrada)){
-        entrada++; 
-        goto q1;
-    }
-    else if(*entrada == '.'){
-        entrada++; 
-        goto q2;
-    }
-    return info_num;
-q2:
-    if(isdigit(*entrada)){
-        entrada++;
-        goto q3;
-    }
-    return info_num;
-q3:
-    if(isdigit(*entrada)){
-        entrada++;
-        goto q3;
-    }
-    else if(isalpha(*entrada)){
-        return info_num;
-    }
-    info_num.atomo = NUMERO;
 
-    //man strncpy
-    strncpy(str_num, ini_num, entrada - ini_num);
-    str_num[entrada - ini_num]='\0';
-    info_num.atributo_numero = atof(str_num);
-    return info_num;
-
-}
-
-
-TInfoAtomo reconhece_char_const(){
+TInfoAtomo reconhece_charconst(){
 
 } 
 
-TInfoAtomo reconhece_int_const(){
+TInfoAtomo reconhece_intconst(){
     
 }
 
@@ -210,12 +228,12 @@ q2:
     }
     return info_comentario;
 q3:
-    if(isdigit(*buffer)){
+    if(*buffer == '\n')){
+        return info_comentario;
+    }
+    else{
         buffer++;
         goto q3;
-    }
-    else if(isalpha(*buffer)){
-        return info_num;
     }
 
 q4:
@@ -225,7 +243,7 @@ q4:
         buffer++;
         goto q2;
     }
-    return info_comentario;
+    // return info_comentario;
 
 
 
@@ -246,23 +264,83 @@ q4:
 //IDENTIFICADOR -> LETRA_MINUSCULA(LETRA_MINUSCULA|DIGITO)
 
 TInfoAtomo reconhece_id(){
+
+    
     TInfoAtomo info_id;
+    char str_id[20]; //não sei se é exatamente 20 tem que ver
+    char *ini_id;
+    info_id.atomo = ERRO;
+    ini_id = buffer;
+
+
     info_id.atomo = ERRO;
 
+    if(*entrada=="char"){
+        info_id.atomo = CHAR;
+        return info_id;
+    }
+    if(*entrada=="else"){
+        info_id.atomo = ELSE;
+        return info_id;
+    }
+    if(*entrada=="if"){
+        info_id.atomo = IF;
+        return info_id;
+    }
+    if(*entrada=="int"){
+        info_id.atomo = INT;
+        return info_id;
+    }
+    if(*entrada=="main"){
+        info_id.atomo = MAIN;
+        return info_id;
+    }
+    if(*entrada=="readint"){
+        info_id.atomo = READINT;
+        return info_id;
+    }
+    if(*entrada=="void"){
+        info_id.atomo = VOID;
+        return info_id;
+    }
+    if(*entrada=="while"){
+        info_id.atomo = WHILE;
+        return info_id;
+    }
+    if(*entrada=="writeint"){
+        info_id.atomo = WRITEINT;
+        return info_id;
+    }
+    
     
     if (islower(*entrada)){
         entrada++;
         goto q1;
+    }else if(isupper(*entrada)){
+        entrada++;
+        goto q1;
+    }else if(*entrada=='_'){
+        entrada++;
+        goto q1;
     }
 q1:
-    if (islower(*entrada) || isdigit(*entrada)){
+    if (islower(*entrada) || isupper(*entrada) ||isdigit(*entrada) || *entrada =='_'){
         entrada ++;
         goto q1;
     }
-    if (isupper(*entrada)){
+    if (*entrada == '\0'){
         return info_id;
     }
-    info_id.atomo = IDENTIFICADOR;
-    return info_id;
+    
+    
+    // return info_id;
 
+    info_id.atomo = IDENTIFICADOR;
+    
+    
+    strncpy(str_id, ini_id, buffer - ini_id);
+    str_id[buffer - ini_id]='\0';
+    info_id.lexema = atof(str_id);
+    return info_id;
+    
 }
