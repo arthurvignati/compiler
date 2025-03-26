@@ -275,67 +275,72 @@ TInfoAtomo reconhece_id(){
 
     info_id.atomo = ERRO;
 
-    if(*entrada=="char"){
-        info_id.atomo = CHAR;
-        return info_id;
-    }
-    if(*entrada=="else"){
-        info_id.atomo = ELSE;
-        return info_id;
-    }
-    if(*entrada=="if"){
-        info_id.atomo = IF;
-        return info_id;
-    }
-    if(*entrada=="int"){
-        info_id.atomo = INT;
-        return info_id;
-    }
-    if(*entrada=="main"){
-        info_id.atomo = MAIN;
-        return info_id;
-    }
-    if(*entrada=="readint"){
-        info_id.atomo = READINT;
-        return info_id;
-    }
-    if(*entrada=="void"){
-        info_id.atomo = VOID;
-        return info_id;
-    }
-    if(*entrada=="while"){
-        info_id.atomo = WHILE;
-        return info_id;
-    }
-    if(*entrada=="writeint"){
-        info_id.atomo = WRITEINT;
-        return info_id;
-    }
+
     
-    
-    if (islower(*entrada)){
-        entrada++;
+    if (islower(*buffer)){
+        buffer++;
         goto q1;
-    }else if(isupper(*entrada)){
-        entrada++;
+    }else if(isupper(*buffer)){
+        buffer++;
         goto q1;
-    }else if(*entrada=='_'){
-        entrada++;
+    }else if(*buffer=='_'){
+        buffer++;
         goto q1;
     }
 q1:
-    if (islower(*entrada) || isupper(*entrada) ||isdigit(*entrada) || *entrada =='_'){
-        entrada ++;
+    if (islower(*buffer) || isupper(*buffer) ||isdigit(*buffer) || *buffer =='_'){
+        buffer ++;
         goto q1;
     }
-    if (*entrada == '\0'){
+    if (*buffer == '\0'){
         return info_id;
     }
     
     
+
+    if(info_id.atomo=="char"){
+        info_id.atomo = CHAR;
+        
+    }
+    if(info_id.atomo=="else"){
+        info_id.atomo = ELSE;
+        
+    }
+    if(info_id.atomo=="if"){
+        info_id.atomo = IF;
+        
+    }
+    if(info_id.atomo=="int"){
+        info_id.atomo = INT;
+        
+    }
+    if(info_id.atomo=="main"){
+        info_id.atomo = MAIN;
+        
+    }
+    if(info_id.atomo=="readint"){
+        info_id.atomo = READINT;
+        
+    }
+    if(info_id.atomo=="void"){
+        info_id.atomo = VOID;
+        
+    }
+    if(info_id.atomo=="while"){
+        info_id.atomo = WHILE;
+        
+    }
+    if(info_id.atomo=="writeint"){
+        info_id.atomo = WRITEINT;
+        
+    }else{
+        info_id.atomo = IDENTIFICADOR;
+    }
+        
     // return info_id;
 
-    info_id.atomo = IDENTIFICADOR;
+    
+
     
     
     strncpy(str_id, ini_id, buffer - ini_id);
