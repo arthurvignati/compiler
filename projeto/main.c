@@ -26,7 +26,6 @@ gcc miniLexico.c -Wall -Og -g -o miniLexico
 //Definições dos átomos
 typedef enum{
     ERRO,
-    EOS,
     IDENTIFICADOR,
     INTCONST,
     INTCHAR,
@@ -61,14 +60,14 @@ typedef enum{
     MULTIPLICACAO,
     DIVISAO,
     AND,
-    OR    
+    OR,
+    EOS    
     }TAtomo;
 
 typedef struct{
     TAtomo atomo;
     int linha;
-
-    char lexema[16];  // Para identificadores (e possivelmente para palavras reservadas)
+    char atributo_id[16];  // Para identificadores (e possivelmente para palavras reservadas)
     int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
     char valorChar;     // Para constantes de caractere (charconst)
     char atributo_comentario;
@@ -131,8 +130,9 @@ TInfoAtomo info_atomo;
 // E ::= a | b | +EE | *EE
 
 // SINTATICO - prototipacao de funcao
-// void E(); 
 void consome( TAtomo atomo );
+void program();
+void compound_stmt();
 
 
 int main(void){
@@ -140,19 +140,17 @@ int main(void){
     info_atomo = obter_atomo();
     lookahead = info_atomo.atomo;
     
-    
-    do{
-        info_atomo = obter_atomo();
-        printf("%03d# %s | ", info_atomo.linha, strAtomo[info_atomo.atomo]);
-        // if(info_atomo.atomo == NUMERO){
-        //     printf("%.2f", info_atomo.atributo_numero);
-        // }
-        // printf("\n");
-    }while (info_atomo.atomo != ERRO && info_atomo.atomo != EOS);
+
+    program();
+    consome(EOS);
+
+
     printf("fim de análise léxica\n"); 
 
 }
 
+
+//######## IMPLEMENTACAO LEXICO 
 TInfoAtomo obter_atomo(void){
     TInfoAtomo info_atomo;
     info_atomo.atomo = ERRO;
@@ -166,24 +164,21 @@ TInfoAtomo obter_atomo(void){
     if (*buffer == '\0'){
         info_atomo.atomo = EOS;
     }
-    if(*buffer == '/'){
-        info_atomo.atomo = reconhece_comentario();
+    if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
+        info_atomo = reconhece_comentario();
+        info_atomo.linha = contaLinha;
         
-    }else if(*buffer == '_' || isalpha(*buffer))){
+    }else if(*buffer == '_' || isalpha(*buffer)){
         info_atomo = reconhece_id();
     }
-    else if(){
-        info_atomo = reconhece_intconst();
-    }else if(){
-        info_atomo = reconhece_charconst()
-    }
+    // else if(){
+    //     info_atomo = reconhece_intconst();
+    // }else if(){
+    //     info_atomo = reconhece_charconst()
+    // }
     info_atomo.linha = contaLinha;
     return info_atomo;
 }
-
-
-// implementacao da funcao
-//NUMERO -> DIGITO+ .DIGITO+ 
 
 
 TInfoAtomo reconhece_charconst(){
@@ -228,7 +223,7 @@ q2:
     }
     return info_comentario;
 q3:
-    if(*buffer == '\n')){
+    if(*buffer == '\n'){
         return info_comentario;
     }
     else{
@@ -243,25 +238,14 @@ q4:
         buffer++;
         goto q2;
     }
-    // return info_comentario;
-
-
-
     info_comentario.atomo = COMENTARIO;
-
-
-
-    //man strncpy
     strncpy(str_com, ini_com, buffer - ini_com);
     str_com[buffer - ini_com]='\0';
-    info_comentario.atributo_comentario = atof(str_com);
+    strcpy(info_atomo.atributo_comentario, str_com);
     return info_comentario;
-
-
 }
 
-// implementacao da funcao
-//IDENTIFICADOR -> LETRA_MINUSCULA(LETRA_MINUSCULA|DIGITO)
+
 
 TInfoAtomo reconhece_id(){
 
@@ -271,11 +255,6 @@ TInfoAtomo reconhece_id(){
     char *ini_id;
     info_id.atomo = ERRO;
     ini_id = buffer;
-
-
-    info_id.atomo = ERRO;
-
-
     
     if (islower(*buffer)){
         buffer++;
@@ -296,56 +275,50 @@ q1:
         return info_id;
     }
     
-    
 
-    if(info_id.atomo=="char"){
+    info_id.atomo = IDENTIFICADOR;
+    
+    if (strcmp(str_id, "char") == 0){
         info_id.atomo = CHAR;
-        
     }
-    if(info_id.atomo=="else"){
-        info_id.atomo = ELSE;
-        
-    }
-    if(info_id.atomo=="if"){
-        info_id.atomo = IF;
-        
-    }
-    if(info_id.atomo=="int"){
-        info_id.atomo = INT;
-        
-    }
-    if(info_id.atomo=="main"){
-        info_id.atomo = MAIN;
-        
-    }
-    if(info_id.atomo=="readint"){
-        info_id.atomo = READINT;
-        
-    }
-    if(info_id.atomo=="void"){
-        info_id.atomo = VOID;
-        
-    }
-    if(info_id.atomo=="while"){
-        info_id.atomo = WHILE;
-        
-    }
-    if(info_id.atomo=="writeint"){
-        info_id.atomo = WRITEINT;
-        
-    }else{
-        info_id.atomo = IDENTIFICADOR;
-    }
-        
-    // return info_id;
-
-    
-
-    
-    
     strncpy(str_id, ini_id, buffer - ini_id);
     str_id[buffer - ini_id]='\0';
-    info_id.lexema = atof(str_id);
+    strcpy(info_atomo.atributo_id, str_id);
     return info_id;
-    
+}
+//######## FIM IMPLEMENTACAO LEXICO 
+
+
+//######## IMPLEMENTACAO SINTATICO 
+// <program> ::= void main ‘(‘ void ‘)’ <compound_stmt> 
+void program(){
+    switch( lookahead ){
+        case VOID:
+            //consome +
+            consome(VOID);
+            break;
+        case MAIN:
+            //consome *
+            consome(MAIN);
+            break;
+        case ABRE_PARENTESES:
+            consome(ABRE_PARENTESES);
+            break;
+        case FECHA_PARENTESES:
+            consome(FECHA_PARENTESES);
+            break;
+        default:
+            compound_stmt();
+    }
+}
+
+void consome( TAtomo atomo ){
+    if( lookahead == atomo ){
+        info_atomo = obter_atomo();
+        lookahead = info_atomo.atomo;
+    }
+    else{
+        printf("\nErro sintatico: esperado [%s] encontrado [%s]\n",strAtomo[atomo],strAtomo[lookahead]);
+        exit(1);
+    }
 }
