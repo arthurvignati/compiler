@@ -142,13 +142,13 @@ int main(void){
     
     
     do{
-        info_atm = obter_atomo();
-        printf("%03d# %s | ", info_atm.linha, strAtomo[info_atm.atomo]);
-        // if(info_atm.atomo == NUMERO){
-        //     printf("%.2f", info_atm.atributo_numero);
+        info_atomo = obter_atomo();
+        printf("%03d# %s | ", info_atomo.linha, strAtomo[info_atomo.atomo]);
+        // if(info_atomo.atomo == NUMERO){
+        //     printf("%.2f", info_atomo.atributo_numero);
         // }
         // printf("\n");
-    }while (info_atm.atomo != ERRO && info_atm.atomo != EOS);
+    }while (info_atomo.atomo != ERRO && info_atomo.atomo != EOS);
     printf("fim de análise léxica\n"); 
 
 }
@@ -157,19 +157,19 @@ TInfoAtomo obter_atomo(void){
     TInfoAtomo info_atomo;
     info_atomo.atomo = ERRO;
     //eliminar delimitadores
-    while(*entrada == ' ' || *entrada == '\n' || *entrada == '\r' || *entrada == '\t'){
-        if(*entrada=='\n'){
+    while(*buffer == ' ' || *buffer == '\n' || *buffer == '\r' || *buffer == '\t'){
+        if(*buffer=='\n'){
             contaLinha++;
         }
-        entrada++;
+        buffer++;
     }
-    if (*entrada == '\0'){
+    if (*buffer == '\0'){
         info_atomo.atomo = EOS;
     }
-    if(*entrada == '/'){
+    if(*buffer == '/'){
         info_atomo.atomo = reconhece_comentario();
         
-    }else if(*entrada == '_' || isalpha(*entrada))){
+    }else if(*buffer == '_' || isalpha(*buffer))){
         info_atomo = reconhece_id();
     }
     else if(){
