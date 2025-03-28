@@ -14,7 +14,7 @@ parâmetro (somente uma ponteiro), veja a declaração da função:
 int miniLexico(char *entrada);
 
 Para compilar no vscode use:
-gcc miniLexico.c -Wall -Og -g -o miniLexico
+gcc main.c -Wall -Og -g -o main
 */
 #include <stdio.h>
 #include <ctype.h>
@@ -30,7 +30,6 @@ typedef enum{
     INTCONST,
     INTCHAR,
     COMENTARIO,
-    //Palavras reservadas
     CHAR,
     ELSE,
     IF, 
@@ -40,7 +39,6 @@ typedef enum{
     VOID,
     WHILE,
     WRITEINT,
-    //Delimitadores
     ABRE_PARENTESES,
     FECHA_PARENTESES,
     ABRE_CHAVES,
@@ -68,14 +66,14 @@ typedef struct{
     TAtomo atomo;
     int linha;
     char atributo_id[16];  // Para identificadores (e possivelmente para palavras reservadas)
+    char atributo_comentario[384];
     int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
     char valorChar;     // Para constantes de caractere (charconst)
-    char atributo_comentario;
 }TInfoAtomo;
 
 
 //declaração de var globais
-char *buffer = "    \nvarx     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
+char *buffer = "    void main ( void )     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
 char *strAtomo[]={"ERRO","IDENTIFICADOR", "INTCONST","INTCHAR",
     "COMENTARIO",
     "CHAR",
@@ -87,12 +85,12 @@ char *strAtomo[]={"ERRO","IDENTIFICADOR", "INTCONST","INTCHAR",
     "VOID",
     "WHILE",
     "WRITEINT",
-    "ABRE_PARENTESES",
-    "FECHA_PARENTESES",
-    "ABRE_CHAVES",
-    "FECHA_CHAVES",
-    "VIRGULA",
-    "PONTO_VIRGULA",  
+    "(",
+    ")",
+    "{",
+    "}",
+    ",",
+    ";",  
     "==",
     "<",
     "<=",
@@ -114,8 +112,8 @@ int contaLinha = 1;
 TInfoAtomo obter_atomo();
 TInfoAtomo reconhece_id();
 TInfoAtomo reconhece_comentario();
-TInfoAtomo reconhece_charconst();
-TInfoAtomo reconhece_intconst();
+// TInfoAtomo reconhece_charconst();
+// TInfoAtomo reconhece_intconst();
 //######## FIM DAS DECLARACOES LÉXICO 
 
 
@@ -132,18 +130,18 @@ TInfoAtomo info_atomo;
 // SINTATICO - prototipacao de funcao
 void consome( TAtomo atomo );
 void program();
-void compound_stmt();
+// void compound_stmt();
 
 
 int main(void){
-    
+    printf("Inicio do programa\n");
     info_atomo = obter_atomo();
+    printf("atomo encontrado: %s\n", strAtomo[info_atomo.atomo]);
     lookahead = info_atomo.atomo;
-    
+    printf("lookahead encontrado: %s\n", strAtomo[lookahead]);
 
     program();
     consome(EOS);
-
 
     printf("fim de análise léxica\n"); 
 
@@ -163,7 +161,29 @@ TInfoAtomo obter_atomo(void){
     }
     if (*buffer == '\0'){
         info_atomo.atomo = EOS;
+    } 
+    if (*buffer == '('){
+        info_atomo.atomo = ABRE_PARENTESES;
     }
+    if (*buffer == ')'){
+        info_atomo.atomo = FECHA_PARENTESES;
+    }
+    if (*buffer == '{'){
+        info_atomo.atomo = ABRE_CHAVES;
+    }
+    if (*buffer == '}'){
+        info_atomo.atomo = FECHA_CHAVES;
+    }
+    if (*buffer == ','){
+        info_atomo.atomo = VIRGULA;
+    }
+    if (*buffer == ';'){
+        info_atomo.atomo = PONTO_VIRGULA;
+    }
+
+
+
+
     if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
         info_atomo = reconhece_comentario();
         info_atomo.linha = contaLinha;
@@ -181,13 +201,13 @@ TInfoAtomo obter_atomo(void){
 }
 
 
-TInfoAtomo reconhece_charconst(){
+// TInfoAtomo reconhece_charconst(){
 
-} 
+// } 
 
-TInfoAtomo reconhece_intconst(){
+// TInfoAtomo reconhece_intconst(){
     
-}
+// }
 
 
 TInfoAtomo reconhece_comentario(){
@@ -248,10 +268,8 @@ q4:
 
 
 TInfoAtomo reconhece_id(){
-
-    
     TInfoAtomo info_id;
-    char str_id[20]; //não sei se é exatamente 20 tem que ver
+    char str_id[15]; 
     char *ini_id;
     info_id.atomo = ERRO;
     ini_id = buffer;
@@ -274,16 +292,42 @@ q1:
     if (*buffer == '\0'){
         return info_id;
     }
-    
 
     info_id.atomo = IDENTIFICADOR;
     
-    if (strcmp(str_id, "char") == 0){
-        info_id.atomo = CHAR;
-    }
     strncpy(str_id, ini_id, buffer - ini_id);
     str_id[buffer - ini_id]='\0';
     strcpy(info_atomo.atributo_id, str_id);
+
+
+    if (strcmp(str_id, "char") == 0){
+        info_id.atomo = CHAR;
+    }
+    if (strcmp(str_id, "else") == 0){
+        info_id.atomo = ELSE;
+    }
+    if (strcmp(str_id, "if") == 0){
+        info_id.atomo = IF;
+    }
+    if (strcmp(str_id, "int") == 0){
+        info_id.atomo = INT;
+    }
+    if (strcmp(str_id, "main") == 0){
+        info_id.atomo = MAIN;
+    }
+    if (strcmp(str_id, "readint") == 0){
+        info_id.atomo = READINT;
+    }
+    if (strcmp(str_id, "void") == 0){
+        info_id.atomo = VOID;
+    }
+    if (strcmp(str_id, "while") == 0){
+        info_id.atomo = WHILE;
+    }
+    if (strcmp(str_id, "writeint") == 0){
+        info_id.atomo = WRITEINT;
+    }
+    printf("strf_id: [%s]\n", str_id);
     return info_id;
 }
 //######## FIM IMPLEMENTACAO LEXICO 
@@ -292,30 +336,20 @@ q1:
 //######## IMPLEMENTACAO SINTATICO 
 // <program> ::= void main ‘(‘ void ‘)’ <compound_stmt> 
 void program(){
-    switch( lookahead ){
-        case VOID:
-            //consome +
-            consome(VOID);
-            break;
-        case MAIN:
-            //consome *
-            consome(MAIN);
-            break;
-        case ABRE_PARENTESES:
-            consome(ABRE_PARENTESES);
-            break;
-        case FECHA_PARENTESES:
-            consome(FECHA_PARENTESES);
-            break;
-        default:
-            compound_stmt();
-    }
+    consome(VOID);
+    consome(MAIN);
+    consome(ABRE_PARENTESES);
+    consome(VOID);
+    consome(FECHA_PARENTESES);
+    // compound_stmt();
 }
 
 void consome( TAtomo atomo ){
     if( lookahead == atomo ){
+        printf("Consumindo [%s]\n",strAtomo[lookahead]);
         info_atomo = obter_atomo();
         lookahead = info_atomo.atomo;
+        printf("Novo lookahead [%s]\n",strAtomo[lookahead]);
     }
     else{
         printf("\nErro sintatico: esperado [%s] encontrado [%s]\n",strAtomo[atomo],strAtomo[lookahead]);

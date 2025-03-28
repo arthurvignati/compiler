@@ -217,8 +217,6 @@ void E(){
         default:
             consome(IDENTIFICADOR);
     }
-
-
 }
 
 void consome( TAtomo atomo ){
