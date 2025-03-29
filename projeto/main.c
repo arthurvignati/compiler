@@ -28,7 +28,7 @@ typedef enum{
     ERRO,
     IDENTIFICADOR,
     INTCONST,
-    INTCHAR,
+    CHARCONST,
     COMENTARIO,
     CHAR,
     ELSE,
@@ -45,7 +45,6 @@ typedef enum{
     FECHA_CHAVES,
     VIRGULA,
     PONTO_VIRGULA,
-    //Operadores
     IGUAL, //==
     MENOR,
     MENOR_IGUAL,
@@ -61,6 +60,7 @@ typedef enum{
     OR,
     EOS    
     }TAtomo;
+    char *strAtomo[]={"ERRO","IDENTIFICADOR","INTCONST","CHARCONST","COMENTARIO","CHAR","ELSE","IF","INT","MAIN","READINT","VOID","WHILE","WRITEINT","(",")","{","}",",",";","==","<","<=","=","!=",">",">=","+","-","*","/","&&","||","EOS"};
 
 typedef struct{
     TAtomo atomo;
@@ -74,37 +74,8 @@ typedef struct{
 
 //declaração de var globais
 char *buffer = "    void main ( void )     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
-char *strAtomo[]={"ERRO","IDENTIFICADOR", "INTCONST","INTCHAR",
-    "COMENTARIO",
-    "CHAR",
-    "ELSE",
-    "IF", 
-    "INT",
-    "MAIN",
-    "READINT",
-    "VOID",
-    "WHILE",
-    "WRITEINT",
-    "(",
-    ")",
-    "{",
-    "}",
-    ",",
-    ";",  
-    "==",
-    "<",
-    "<=",
-    ">=",
-    ">",
-    "-",
-    "*",
-    "/",
-    "AND",
-    "OR","EOS"};
     
     
-
-
 int contaLinha = 1;
 /*aaaa********************/
 
@@ -130,7 +101,24 @@ TInfoAtomo info_atomo;
 // SINTATICO - prototipacao de funcao
 void consome( TAtomo atomo );
 void program();
-// void compound_stmt();
+void compound_stmt();
+void var_decl();
+void type_specifier();
+void var_decl_list();
+void variable_id();
+void stmt();
+void assig_stmt();
+void cond_stmt();
+void while_stmt();
+void expr();
+void conjunction();
+void comparison();
+void relation();
+void sum();
+void term();
+void factor();
+
+
 
 
 int main(void){
@@ -341,8 +329,190 @@ void program(){
     consome(ABRE_PARENTESES);
     consome(VOID);
     consome(FECHA_PARENTESES);
-    // compound_stmt();
+    compound_stmt();
 }
+
+void compound_stmt(){
+    consome(ABRE_CHAVES);
+    var_decl();
+    while(lookahead == ABRE_CHAVES || lookahead == IDENTIFICADOR || lookahead == IF || lookahead == WHILE || lookahead == READINT || lookahead == WRITEINT ){
+        stmt();
+    }
+    consome(FECHA_CHAVES);
+}
+
+
+void var_decl(){
+    if (lookahead == CHAR || lookahead == INT /*|| lookahead == WRITEINT*/){
+        type_specifier();
+        var_decl_list();
+        consome(PONTO_VIRGULA);
+    }
+}
+
+void type_specifier(){
+    if (lookahead == INT){
+        consome(INT);
+    }else{
+        consome(CHAR);
+    }
+}
+
+void var_decl_list(){
+    variable_id();
+    while (lookahead == IDENTIFICADOR){
+        consome(VIRGULA);
+        variable_id();
+    }
+}
+
+
+void variable_id(){
+    consome(IDENTIFICADOR);
+    if (lookahead == ATRIBUICAO){
+        consome(ATRIBUICAO);
+        expr();
+    }
+}
+
+void stmt(){
+    if (lookahead == ABRE_CHAVES){
+        compound_stmt();
+    } else if(lookahead == IDENTIFICADOR){
+        assig_stmt();
+    } else if(lookahead == IF){
+        cond_stmt();
+    } else if(lookahead == WHILE){
+        while_stmt();
+    } else if(lookahead == READINT){
+        consome(READINT);
+        consome(ABRE_PARENTESES);
+        consome(IDENTIFICADOR);
+        consome(FECHA_PARENTESES);
+        consome(PONTO_VIRGULA);
+    } else if(lookahead == WRITEINT){
+        consome(WRITEINT);
+        consome(ABRE_PARENTESES);
+        expr();
+        consome(FECHA_PARENTESES);
+        consome(PONTO_VIRGULA);
+    } 
+}
+
+void assig_stmt(){
+    consome(IDENTIFICADOR);
+    consome(ATRIBUICAO);
+    expr();
+    consome(PONTO_VIRGULA);
+}
+
+void cond_stmt(){
+    consome(IF);
+    consome(ABRE_PARENTESES);
+    expr();
+    consome(FECHA_PARENTESES);
+    stmt();
+    if (lookahead == ELSE){
+        consome(ELSE);
+        stmt();
+    }
+}
+
+void while_stmt(){
+    consome(WHILE);
+    consome(ABRE_PARENTESES);
+    expr();
+    consome(FECHA_PARENTESES);
+    stmt();
+}
+
+void expr(){
+    conjunction();
+    while (lookahead == OR ){
+        consome(OR);
+        conjunction();
+    }
+}
+
+void conjunction(){
+    comparison();
+    while (lookahead == AND){
+        consome(AND);
+        comparison();
+    }
+}
+
+void comparison(){
+    sum();
+    if (lookahead == MENOR || lookahead == MENOR_IGUAL || lookahead == IGUAL || lookahead == DIFERENTE || lookahead == MAIOR || lookahead == MAIOR_IGUAL){
+        relation();
+        sum();
+    }
+}
+
+void relation(){
+    switch (lookahead)
+    {
+    case MENOR:
+        consome(MENOR);
+        break;
+    case MENOR_IGUAL:
+        consome(MENOR_IGUAL);
+        break;
+    case IGUAL:
+        consome(IGUAL);
+        break; 
+    case DIFERENTE:
+        consome(DIFERENTE);
+        break; 
+    case MAIOR:
+        consome(MAIOR);
+        break; 
+    case MAIOR_IGUAL:
+        consome(MAIOR_IGUAL);
+        break; 
+    default:
+        break;
+    }
+}
+
+void sum(){
+    term();
+    while(lookahead == MAIS || lookahead == MENOS){
+        if(lookahead == MAIS){
+            consome(MAIS);
+        }else{
+            consome(MENOS);
+        }
+        term();
+    }
+}
+
+void term(){
+    factor();
+    while(lookahead == MULTIPLICACAO || lookahead == DIVISAO){
+        if(lookahead == MULTIPLICACAO){
+            consome(MULTIPLICACAO);
+        }else{
+            consome(DIVISAO);
+        }
+        factor();
+    }
+}
+
+void factor(){
+    if(lookahead == INTCONST){
+        consome(INTCONST);
+    }else if(lookahead == CHARCONST){
+        consome(CHARCONST);
+    }else{
+        consome(IDENTIFICADOR);
+    }
+    consome(ABRE_PARENTESES);
+    expr();
+    consome(FECHA_PARENTESES);
+}
+
 
 void consome( TAtomo atomo ){
     if( lookahead == atomo ){
