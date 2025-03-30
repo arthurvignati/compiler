@@ -73,8 +73,8 @@ typedef struct{
 
 
 //declaração de var globais
-char *buffer = "    void main ( void )     12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
-    
+char *buffer; //= "    void main ( void ) { if    12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
+char *read_file(const char *file_name);
     
 int contaLinha = 1;
 /*aaaa********************/
@@ -120,21 +120,19 @@ void factor();
 
 
 
-
-int main(void){
-    printf("Inicio do programa\n");
+int main(void) {
+    buffer = read_file("entrada.txt");
     info_atomo = obter_atomo();
-    printf("atomo encontrado: %s\n", strAtomo[info_atomo.atomo]);
     lookahead = info_atomo.atomo;
-    printf("lookahead encontrado: %s\n", strAtomo[lookahead]);
+    
+    printf("Inicio do programa\n");
 
     program();
     consome(EOS);
-
-    printf("fim de análise léxica\n"); 
-
+    
+    printf("%d linhas analisadas, programa sintaticamente correto\n", contaLinha);
+    return 0;
 }
-
 
 //######## IMPLEMENTACAO LEXICO 
 TInfoAtomo obter_atomo(void){
@@ -150,31 +148,84 @@ TInfoAtomo obter_atomo(void){
     if (*buffer == '\0'){
         info_atomo.atomo = EOS;
     } 
-    if (*buffer == '('){
+    else if (*buffer == '('){
+        buffer++;
         info_atomo.atomo = ABRE_PARENTESES;
     }
-    if (*buffer == ')'){
+    else if (*buffer == ')'){
+        buffer++;
         info_atomo.atomo = FECHA_PARENTESES;
     }
-    if (*buffer == '{'){
+    else if (*buffer == '{'){
+        buffer++;
         info_atomo.atomo = ABRE_CHAVES;
     }
-    if (*buffer == '}'){
+    else if (*buffer == '}'){
+        buffer++;
         info_atomo.atomo = FECHA_CHAVES;
     }
-    if (*buffer == ','){
+    else if (*buffer == ','){
+        buffer++;
         info_atomo.atomo = VIRGULA;
     }
-    if (*buffer == ';'){
+    else if (*buffer == ';'){
+        buffer++;
         info_atomo.atomo = PONTO_VIRGULA;
+    }    
+    else if (*buffer == '=' && (*(buffer+1) == '=')){
+        buffer++;
+        info_atomo.atomo = IGUAL;
+    }
+    else if (*buffer == '=' && (*(buffer+1) != '=')){
+        buffer++;
+        info_atomo.atomo = ATRIBUICAO;
+    }
+    else if (*buffer == '<' && (*(buffer+1) == '=')){
+        buffer++;
+        info_atomo.atomo = MENOR_IGUAL;
+    }
+    else if (*buffer == '<' && (*(buffer+1) != '=')){
+        buffer++;
+        info_atomo.atomo = MENOR;
+    }
+    else if (*buffer == '>' && (*(buffer+1) == '=')){
+        buffer++;
+        info_atomo.atomo = MAIOR_IGUAL;
+    }
+    else if (*buffer == '>' && (*(buffer+1) != '=')){
+        buffer++;
+        info_atomo.atomo = MAIOR;
+    }
+    else if (*buffer == '+'){
+        buffer++;
+        info_atomo.atomo = MAIS;
+    }
+    else if (*buffer == '-'){
+        buffer++;
+        info_atomo.atomo = MENOS;
+    }
+    else if (*buffer == '*'){
+        buffer++;
+        info_atomo.atomo = MULTIPLICACAO;
+    }
+    else if (*buffer == '/' && (*(buffer+1) != '*' && *(buffer+1) != '/')){
+        buffer++;
+        info_atomo.atomo = DIVISAO;
+    }
+    else if (*buffer == '&' && (*(buffer+1) == '&')){
+        buffer++;
+        info_atomo.atomo = AND;
+    }
+    else if (*buffer == '|' && (*(buffer+1) == '|')){
+        buffer++;
+        info_atomo.atomo = OR;
     }
 
-
-
-
-    if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
+    else if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
+        printf("# %3d: %s\n", (info_atomo.linha)+1, "comentario");  
         info_atomo = reconhece_comentario();
         info_atomo.linha = contaLinha;
+        return obter_atomo();
         
     }else if(*buffer == '_' || isalpha(*buffer)){
         info_atomo = reconhece_id();
@@ -201,16 +252,15 @@ TInfoAtomo obter_atomo(void){
 TInfoAtomo reconhece_comentario(){
 
     TInfoAtomo info_comentario;
-    char str_com[20];
-    char *ini_com;
+    char str_com[384];
+    char *ini_com = buffer;
     info_comentario.atomo = ERRO;
-    ini_com = buffer;
 // qo:
-    if(*buffer == '/'){
-        buffer++; 
-        goto q1;
-    }
-    return info_comentario;
+    // if(*buffer == '/'){
+    buffer++; 
+    goto q1;
+    // }
+    // return info_comentario;
 q1:
     if(*buffer == '*'){
         buffer++; 
@@ -220,37 +270,72 @@ q1:
         buffer++; 
         goto q3;
     }
-    return info_comentario;
+        goto fim;
 q2:
+    if (*buffer == '\0') {
+        goto fim; 
+    }
     if(*buffer == '*'){
         buffer++;
         goto q4;
-    }else{
-        buffer++;
-        goto q2;
+    } 
+    if (*buffer == '\n') {
+        contaLinha++;
     }
-    return info_comentario;
+    
+    buffer++;
+    goto q2;
 q3:
+    if (*buffer == '\0') {
+        goto fim; 
+    }
     if(*buffer == '\n'){
-        return info_comentario;
-    }
-    else{
         buffer++;
-        goto q3;
+        contaLinha++;
+        goto q5;
     }
+    buffer++;
+    goto q3;
 
 q4:
-    if(*buffer == '/'){
-        return info_comentario;
-    }else{
-        buffer++;
-        goto q2;
+    if (*buffer == '\0') {
+        // Fim de arquivo/string sem fechar
+        goto fim; 
     }
+    if(*buffer == '/'){
+        buffer++;
+        goto q5;
+    }if (*buffer == '*') {
+        // Vários '*' em sequência, permanece no mesmo estado
+        buffer++;
+        goto q4;
+    }if (*buffer == '\n') {
+        contaLinha++;
+    }
+    buffer++;
+    goto q2;
+q5:
+    info_comentario.atomo = COMENTARIO;
+    {
+        int length = buffer - ini_com;
+        if (length > 383) {
+            length = 383;  // Evita overflow do buffer local
+        }
+        strncpy(str_com, ini_com, length);
+        str_com[length] = '\0';
+        strcpy(info_comentario.atributo_comentario, str_com);
+    }
+    goto fim;
+
     info_comentario.atomo = COMENTARIO;
     strncpy(str_com, ini_com, buffer - ini_com);
     str_com[buffer - ini_com]='\0';
     strcpy(info_atomo.atributo_comentario, str_com);
     return info_comentario;
+
+fim:
+    return info_comentario;
+
 }
 
 
@@ -285,7 +370,7 @@ q1:
     
     strncpy(str_id, ini_id, buffer - ini_id);
     str_id[buffer - ini_id]='\0';
-    strcpy(info_atomo.atributo_id, str_id);
+    strcpy(info_id.atributo_id, str_id);
 
 
     if (strcmp(str_id, "char") == 0){
@@ -315,7 +400,6 @@ q1:
     if (strcmp(str_id, "writeint") == 0){
         info_id.atomo = WRITEINT;
     }
-    printf("strf_id: [%s]\n", str_id);
     return info_id;
 }
 //######## FIM IMPLEMENTACAO LEXICO 
@@ -360,7 +444,7 @@ void type_specifier(){
 
 void var_decl_list(){
     variable_id();
-    while (lookahead == IDENTIFICADOR){
+    while (lookahead == VIRGULA){
         consome(VIRGULA);
         variable_id();
     }
@@ -515,14 +599,54 @@ void factor(){
 
 
 void consome( TAtomo atomo ){
-    if( lookahead == atomo ){
-        printf("Consumindo [%s]\n",strAtomo[lookahead]);
+    while(lookahead == COMENTARIO) {
+        printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_comentario);
         info_atomo = obter_atomo();
         lookahead = info_atomo.atomo;
-        printf("Novo lookahead [%s]\n",strAtomo[lookahead]);
+    }
+    if( lookahead == atomo ){
+        if(lookahead == IDENTIFICADOR) {
+            printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_id);
+        } else if(lookahead == INTCONST) {
+            printf("# %3d: %s | %d\n", info_atomo.linha, strAtomo[lookahead], info_atomo.valorInt);
+        } else {
+            printf("# %3d: %s\n", info_atomo.linha, strAtomo[lookahead]);
+        }
+        info_atomo = obter_atomo();
+        lookahead = info_atomo.atomo;
     }
     else{
         printf("\nErro sintatico: esperado [%s] encontrado [%s]\n",strAtomo[atomo],strAtomo[lookahead]);
         exit(1);
     }
+}
+
+
+char *read_file(const char *file_name) {
+    FILE *file_ptr = fopen(file_name, "r");
+    if (file_ptr == NULL) {
+        fprintf(stderr, "Erro: Não foi possível abrir o arquivo %s\n", file_name);
+        exit(EXIT_FAILURE);
+    }
+    
+    fseek(file_ptr, 0, SEEK_END);
+    long file_size = ftell(file_ptr);
+    rewind(file_ptr);
+    
+    char *content = malloc(file_size + 1);
+    if (content == NULL) {
+        fprintf(stderr, "Erro: Falha na alocação de memória.\n");
+        fclose(file_ptr);
+        exit(EXIT_FAILURE);
+    }
+    
+    // Lê o conteúdo do arquivo
+    size_t bytes_read = fread(content, 1, file_size, file_ptr);
+    if (bytes_read != file_size) {
+        fprintf(stderr, "Aviso: Nem todos os bytes foram lidos de %s.\n", file_name);
+    }
+    content[file_size] = '\0';  
+    
+    fclose(file_ptr);
+    return content;
 }
