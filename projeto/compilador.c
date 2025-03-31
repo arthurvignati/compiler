@@ -83,8 +83,8 @@ int contaLinha = 1;
 TInfoAtomo obter_atomo();
 TInfoAtomo reconhece_id();
 TInfoAtomo reconhece_comentario();
-// TInfoAtomo reconhece_charconst();
-// TInfoAtomo reconhece_intconst();
+TInfoAtomo reconhece_charconst();
+TInfoAtomo reconhece_intconst();
 //######## FIM DAS DECLARACOES LÉXICO 
 
 
@@ -120,14 +120,19 @@ void factor();
 
 
 
-int main(void) {
-    buffer = read_file("entrada.txt");
-    info_atomo = obter_atomo();
-    lookahead = info_atomo.atomo;
-    
+int main( int argc, char *argv[]) {
+    if (argc < 2){
+        printf("Erro: faltou arquivo!");
+        return 0;
+    }
+    buffer = read_file(argv[1]);
     printf("Inicio do programa\n");
+    info_atomo = obter_atomo();
+    
+    lookahead = info_atomo.atomo;
 
     program();
+    // obter_atomo();
     consome(EOS);
     
     printf("%d linhas analisadas, programa sintaticamente correto\n", contaLinha);
@@ -145,7 +150,8 @@ TInfoAtomo obter_atomo(void){
         }
         buffer++;
     }
-    if (*buffer == '\0'){
+    if (*buffer == '\0' || *buffer == -1){
+
         info_atomo.atomo = EOS;
     } 
     else if (*buffer == '('){
@@ -222,31 +228,92 @@ TInfoAtomo obter_atomo(void){
     }
 
     else if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
-        printf("# %3d: %s\n", (info_atomo.linha)+1, "comentario");  
+
+        printf("# %3d: %s\n", (contaLinha), "comentario");  
         info_atomo = reconhece_comentario();
         info_atomo.linha = contaLinha;
         return obter_atomo();
         
+    }else if(*buffer == '\''){
+        info_atomo = reconhece_charconst();
+    }else if(*buffer == '0'){
+        info_atomo = reconhece_intconst();
     }else if(*buffer == '_' || isalpha(*buffer)){
         info_atomo = reconhece_id();
     }
-    // else if(){
-    //     info_atomo = reconhece_intconst();
-    // }else if(){
-    //     info_atomo = reconhece_charconst()
-    // }
+
     info_atomo.linha = contaLinha;
     return info_atomo;
 }
 
 
-// TInfoAtomo reconhece_charconst(){
-
-// } 
-
-// TInfoAtomo reconhece_intconst(){
+TInfoAtomo reconhece_charconst(){
+    TInfoAtomo info_charconst;
+    char c;
+    info_charconst.atomo = ERRO;
     
-// }
+    if (*buffer != '\'')
+        return info_charconst;  
+    buffer++; 
+    goto q1;
+    
+q1:
+    if (*buffer == '\0' || *buffer == '\'')
+        return info_charconst;  
+    c = *buffer;  
+    if ((unsigned char)c >= 128)
+        return info_charconst;  
+    buffer++;   
+    goto q2;
+    
+q2:
+    if (*buffer == '\'') {
+        buffer++;  
+        info_charconst.atomo = CHARCONST;
+        info_charconst.valorChar = c;
+        return info_charconst;
+    }
+    return info_charconst;  
+} 
+
+TInfoAtomo reconhece_intconst(){
+    TInfoAtomo info_int;
+    info_int.atomo = ERRO;
+    char str_hex[20];  
+    char *ini = buffer;
+    int count = 0;     
+
+    if (*buffer != '0')
+        return info_int; 
+    buffer++;  
+    goto q1;
+
+q1:
+    if (*buffer != 'x' && *buffer != 'X')
+        return info_int;  
+    buffer++; 
+    goto q2;
+
+q2:
+    if (isdigit(*buffer) || (*buffer >= 'A' && *buffer <= 'F')) {
+        buffer++;
+        count++;
+        goto q2;
+    }
+    if (count == 0)
+        return info_int;  
+    
+    info_int.atomo = INTCONST;
+    {
+        int len = buffer - ini;
+        if (len > 19)
+            len = 19;
+        strncpy(str_hex, ini, len);
+        str_hex[len] = '\0';
+        info_int.valorInt = (int) strtol(str_hex, NULL, 16);
+    }
+    return info_int;
+}
 
 
 TInfoAtomo reconhece_comentario(){
@@ -255,12 +322,9 @@ TInfoAtomo reconhece_comentario(){
     char str_com[384];
     char *ini_com = buffer;
     info_comentario.atomo = ERRO;
-// qo:
-    // if(*buffer == '/'){
+
     buffer++; 
     goto q1;
-    // }
-    // return info_comentario;
 q1:
     if(*buffer == '*'){
         buffer++; 
@@ -299,14 +363,12 @@ q3:
 
 q4:
     if (*buffer == '\0') {
-        // Fim de arquivo/string sem fechar
         goto fim; 
     }
     if(*buffer == '/'){
         buffer++;
         goto q5;
     }if (*buffer == '*') {
-        // Vários '*' em sequência, permanece no mesmo estado
         buffer++;
         goto q4;
     }if (*buffer == '\n') {
@@ -319,7 +381,7 @@ q5:
     {
         int length = buffer - ini_com;
         if (length > 383) {
-            length = 383;  // Evita overflow do buffer local
+            length = 383;  
         }
         strncpy(str_com, ini_com, length);
         str_com[length] = '\0';
@@ -342,7 +404,7 @@ fim:
 
 TInfoAtomo reconhece_id(){
     TInfoAtomo info_id;
-    char str_id[15]; 
+    char str_id[16]; 
     char *ini_id;
     info_id.atomo = ERRO;
     ini_id = buffer;
@@ -365,9 +427,13 @@ q1:
     if (*buffer == '\0'){
         return info_id;
     }
+    int len = buffer - ini_id;
+    if (len > 15) {
+        printf("\nErro lexico: na linha [%d] - identificadores so podem ter no maximo 15 caracteres\n",contaLinha);
+        exit(1);
+    }
 
     info_id.atomo = IDENTIFICADOR;
-    
     strncpy(str_id, ini_id, buffer - ini_id);
     str_id[buffer - ini_id]='\0';
     strcpy(info_id.atributo_id, str_id);
@@ -418,7 +484,9 @@ void program(){
 
 void compound_stmt(){
     consome(ABRE_CHAVES);
-    var_decl();
+    while(lookahead == CHAR || lookahead == INT) {
+        var_decl();
+    }
     while(lookahead == ABRE_CHAVES || lookahead == IDENTIFICADOR || lookahead == IF || lookahead == WHILE || lookahead == READINT || lookahead == WRITEINT ){
         stmt();
     }
@@ -589,12 +657,13 @@ void factor(){
         consome(INTCONST);
     }else if(lookahead == CHARCONST){
         consome(CHARCONST);
-    }else{
+    }else if(lookahead == IDENTIFICADOR){
         consome(IDENTIFICADOR);
-    }
-    consome(ABRE_PARENTESES);
-    expr();
-    consome(FECHA_PARENTESES);
+    }else{
+        consome(ABRE_PARENTESES);
+        expr();
+        consome(FECHA_PARENTESES);        
+   }
 }
 
 
@@ -623,10 +692,10 @@ void consome( TAtomo atomo ){
 
 
 char *read_file(const char *file_name) {
-    FILE *file_ptr = fopen(file_name, "r");
+    FILE *file_ptr = fopen(file_name, "rb");
     if (file_ptr == NULL) {
         fprintf(stderr, "Erro: Não foi possível abrir o arquivo %s\n", file_name);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     
     fseek(file_ptr, 0, SEEK_END);
@@ -637,10 +706,9 @@ char *read_file(const char *file_name) {
     if (content == NULL) {
         fprintf(stderr, "Erro: Falha na alocação de memória.\n");
         fclose(file_ptr);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     
-    // Lê o conteúdo do arquivo
     size_t bytes_read = fread(content, 1, file_size, file_ptr);
     if (bytes_read != file_size) {
         fprintf(stderr, "Aviso: Nem todos os bytes foram lidos de %s.\n", file_name);
