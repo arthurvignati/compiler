@@ -1,20 +1,6 @@
-/******************************************************************************
-
-Welcome to GDB Online.
-  GDB online is an online compiler and debugger tool for C, C++, Python, PHP, Ruby, 
-  C#, OCaml, VB, Perl, Swift, Prolog, Javascript, Pascal, COBOL, HTML, CSS, JS
-  Code, Compile, Run and Debug online from anywhere in world.
-
-*******************************************************************************/
-
 /*
-Implementa uma função que recebe um ponteiro para vetor de caractere por
-parâmetro (somente uma ponteiro), veja a declaração da função:
-
-int miniLexico(char *entrada);
-
 Para compilar no vscode use:
-gcc main.c -Wall -Og -g -o main
+gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
 */
 #include <stdio.h>
 #include <ctype.h>
@@ -65,10 +51,10 @@ typedef enum{
 typedef struct{
     TAtomo atomo;
     int linha;
-    char atributo_id[16];  // Para identificadores (e possivelmente para palavras reservadas)
+    char atributo_id[16];  
     char atributo_comentario[384];
-    int valorInt;     // Para constantes inteiras (intconst) – valor em decimal
-    char valorChar;     // Para constantes de caractere (charconst)
+    int valorInt;     
+    char valorChar;     
 }TInfoAtomo;
 
 
@@ -77,7 +63,6 @@ char *buffer; //= "    void main ( void ) { if    12.4\n  111.90234  \rvar1\n\n\
 char *read_file(const char *file_name);
     
 int contaLinha = 1;
-/*aaaa********************/
 
 // declaracao da funcao
 TInfoAtomo obter_atomo();
@@ -96,7 +81,6 @@ TAtomo lookahead;
 TInfoAtomo info_atomo;
 
 
-// E ::= a | b | +EE | *EE
 
 // SINTATICO - prototipacao de funcao
 void consome( TAtomo atomo );
