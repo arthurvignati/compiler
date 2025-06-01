@@ -106,7 +106,7 @@ void factor();
 
 int main( int argc, char *argv[]) {
     if (argc < 2){
-        printf("Erro: faltou arquivo!");
+        printf("Erro: faltou arquivo!\n");
         return 0;
     }
     buffer = read_file(argv[1]);
@@ -163,7 +163,7 @@ TInfoAtomo obter_atomo(void){
         info_atomo.atomo = PONTO_VIRGULA;
     }    
     else if (*buffer == '=' && (*(buffer+1) == '=')){
-        buffer++;
+        buffer += 2;
         info_atomo.atomo = IGUAL;
     }
     else if (*buffer == '=' && (*(buffer+1) != '=')){
@@ -203,11 +203,11 @@ TInfoAtomo obter_atomo(void){
         info_atomo.atomo = DIVISAO;
     }
     else if (*buffer == '&' && (*(buffer+1) == '&')){
-        buffer++;
+        buffer += 2;
         info_atomo.atomo = AND;
     }
     else if (*buffer == '|' && (*(buffer+1) == '|')){
-        buffer++;
+        buffer += 2;
         info_atomo.atomo = OR;
     }
 
