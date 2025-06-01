@@ -174,10 +174,10 @@ int main( int argc, char *argv[]) {
     info_atomo = obter_atomo();
     
     lookahead = info_atomo.atomo;
-    printf("INPP\n");
+    printf("\tINPP\n");
     program();
     // obter_atomo();
-    printf("PARA\n");
+    printf("\tPARA\n");
     consome(EOS);
     
     printf("\nTABELA DE SIMBOLOS\n");
@@ -541,7 +541,7 @@ void compound_stmt(){
         var_decl();
     }
     if (nivelBloco == 1){
-        printf("AMEM %d\n", proxEndereco);
+        printf("\tAMEM %d\n", proxEndereco);
     }
     while(lookahead == ABRE_CHAVES || lookahead == IDENTIFICADOR || lookahead == IF || lookahead == WHILE || lookahead == READINT || lookahead == WRITEINT ){
         stmt();
@@ -585,7 +585,7 @@ void variable_id(){
         consome(ATRIBUICAO);
         expr();
         int end = busca_tabela_simbolos(nome);
-        printf("ARMZ %d\n", end);
+        printf("\tARMZ %d\n", end);
     }
 }
 
@@ -610,16 +610,16 @@ void stmt(){
                     contaLinha, nome);
             exit(1);
         }
-        printf("LEIT\n");
+        printf("\tLEIT\n");
         consome(IDENTIFICADOR);
-        printf("ARMZ %d\n", busca_tabela_simbolos(nome));
+        printf("\tARMZ %d\n", busca_tabela_simbolos(nome));
         consome(FECHA_PARENTESES);
         consome(PONTO_VIRGULA);
     } else if(lookahead == WRITEINT){
         consome(WRITEINT);
         consome(ABRE_PARENTESES);
         expr();
-        printf("IMPR\n");
+        printf("\tIMPR\n");
         consome(FECHA_PARENTESES);
         consome(PONTO_VIRGULA);
     } 
@@ -638,7 +638,7 @@ void assig_stmt(){
     consome(IDENTIFICADOR);
     consome(ATRIBUICAO);
     expr();
-    printf("ARMZ %d\n", busca_tabela_simbolos(nome));
+    printf("\tARMZ %d\n", busca_tabela_simbolos(nome));
     consome(PONTO_VIRGULA);
 }
 
@@ -649,9 +649,9 @@ void cond_stmt(){
     consome(ABRE_PARENTESES);
     expr();
     consome(FECHA_PARENTESES);
-    printf("DSVF L%d\n", L1);
+    printf("\tDSVF L%d\n", L1);
     stmt();
-    printf("DSVS L%d\n", L2);
+    printf("\tDSVS L%d\n", L2);
     printf("L%d: NADA\n", L1);
     if (lookahead == ELSE){
         consome(ELSE);
@@ -668,9 +668,9 @@ void while_stmt(){
     consome(ABRE_PARENTESES);
     expr();
     consome(FECHA_PARENTESES);
-    printf("DSVF L%d\n", L2);
+    printf("\tDSVF L%d\n", L2);
     stmt();
-    printf("DSVS L%d\n", L1);
+    printf("\tDSVS L%d\n", L1);
     printf("L%d: NADA\n", L2);
 }
 
@@ -679,11 +679,11 @@ void expr(){
     while (lookahead == OR ){
         consome(OR);
         conjunction();
-        printf("SOMA\n");
-        printf("CRCT 0\n");  
-        printf("CMIG\n");
-        printf("CRCT 0\n");
-        printf("CMAG\n"); 
+        printf("\tSOMA\n");
+        printf("\tCRCT 0\n");  
+        printf("\tCMIG\n");
+        printf("\tCRCT 0\n");
+        printf("\tCMAG\n"); 
 
     }
 }
@@ -693,11 +693,11 @@ void conjunction(){
     while (lookahead == AND){
         consome(AND);
         comparison();
-        printf("MULT\n");      
-        printf("CRCT 0\n");    
-        printf("CMIG\n");      
-        printf("CRCT 0\n");   
-        printf("CMAG\n");     
+        printf("\tMULT\n");      
+        printf("\tCRCT 0\n");    
+        printf("\tCMIG\n");      
+        printf("\tCRCT 0\n");   
+        printf("\tCMAG\n");     
     }
 }
 
@@ -709,22 +709,22 @@ void comparison(){
         sum();
         switch (op) {
             case MENOR:
-                printf("CMME\n"); 
+                printf("\tCMME\n"); 
                 break;
             case MENOR_IGUAL:
-                printf("CMEG\n");  
+                printf("\tCMEG\n");  
                 break;
             case IGUAL:
-                printf("CMIG\n");  
+                printf("\tCMIG\n");  
                 break;
             case DIFERENTE:
-                printf("CMDG\n");   
+                printf("\tCMDG\n");   
                 break;
             case MAIOR:
-                printf("CMMA\n");  
+                printf("\tCMMA\n");  
                 break;
             case MAIOR_IGUAL:
-                printf("CMAG\n");   
+                printf("\tCMAG\n");   
                 break;
             default:
                 break;
@@ -764,11 +764,11 @@ void sum(){
         if(lookahead == MAIS){
             consome(MAIS);
             term();
-            printf("SOMA\n");
+            printf("\tSOMA\n");
         }else{
             consome(MENOS);
             term();
-            printf("SUBT\n"); 
+            printf("\tSUBT\n"); 
         }
         // term();
     }
@@ -780,11 +780,11 @@ void term(){
         if(lookahead == MULTIPLICACAO){
             consome(MULTIPLICACAO);
             factor();
-            printf("MULT\n");
+            printf("\tMULT\n");
         }else{
             consome(DIVISAO);
             factor();
-            printf("DIVI\n"); 
+            printf("\tDIVI\n"); 
         }
         // factor();
     }
@@ -792,10 +792,10 @@ void term(){
 
 void factor(){
     if(lookahead == INTCONST){
-        printf("CRCT %d\n", info_atomo.valorInt);
+        printf("\tCRCT %d\n", info_atomo.valorInt);
         consome(INTCONST);
     }else if(lookahead == CHARCONST){
-        printf("CRCT %d\n", (int) info_atomo.valorChar);
+        printf("\tCRCT %d\n", (int) info_atomo.valorChar);
         consome(CHARCONST);
     }else if(lookahead == IDENTIFICADOR){
         char nome[16];
@@ -808,7 +808,7 @@ void factor(){
             exit(1);
         }
         int end = busca_tabela_simbolos(nome);
-        printf("CRVL %d\n", end);
+        printf("\tCRVL %d\n", end);
         consome(IDENTIFICADOR);
     }else{
         consome(ABRE_PARENTESES);
