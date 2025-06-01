@@ -8,6 +8,44 @@ gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
 #include <string.h>
 
 
+//DECLARAÇÕES SEMÂNTICO
+typedef struct _TNo {
+    char ID[16];
+    int endereco;
+    struct _TNo *prox;
+} TNo;
+
+TNo *tabela = NULL;
+
+int proxEndereco = 0;
+
+TNo* buscar_simbolo(const char *id) {
+    TNo *p = tabela;
+    while (p) {
+        if (strcmp(p->ID, id) == 0) {
+            return p;
+        }
+        p = p->prox;
+    }
+    return NULL;
+}
+
+void inserir_simbolo(const char *id) {
+    if (buscar_simbolo(id) != NULL) {        
+        fprintf(stderr, "Erro semantico na linha %d: identificador '%s' ja declarado\n", contaLinha, id);
+        exit(1);
+    }
+    TNo *novo = (TNo *) malloc(sizeof(TNo));
+    if (!novo) {
+        fprintf(stderr, "Erro interno: falha na alocação de memória para símbolo\n");
+        exit(1);
+    }
+    strcpy(novo->ID, id);
+    novo->endereco = proxEndereco++;
+    novo->prox = tabela;
+    tabela = novo;
+}
+
 //######## DECLARACOES LEXICO
 //Definições dos átomos
 typedef enum{
@@ -504,7 +542,10 @@ void var_decl_list(){
 
 
 void variable_id(){
-    consome(IDENTIFICADOR);
+    char nome[16];
+    strcpy(nome, info_atomo.atributo_id);   // guarda o lexema antes do consome
+    consome(IDENTIFICADOR);                 // avança o token
+    inserir_simbolo(nome);                  // verifica se vai ter erro semântico
     if (lookahead == ATRIBUICAO){
         consome(ATRIBUICAO);
         expr();
@@ -523,6 +564,15 @@ void stmt(){
     } else if(lookahead == READINT){
         consome(READINT);
         consome(ABRE_PARENTESES);
+
+        char nome[16];
+        strcpy(nome, info_atomo.atributo_id);
+        if (buscar_simbolo(nome) == NULL) {
+            fprintf(stderr,
+                    "Erro semantico na linha %d: variavel '%s' nao declarada em readint\n",
+                    contaLinha, nome);
+            exit(1);
+        }
         consome(IDENTIFICADOR);
         consome(FECHA_PARENTESES);
         consome(PONTO_VIRGULA);
@@ -536,6 +586,15 @@ void stmt(){
 }
 
 void assig_stmt(){
+    char nome[16];
+    strcpy(nome, info_atomo.atributo_id);
+
+    if (buscar_simbolo(nome) == NULL) {
+        fprintf(stderr,
+                "Erro semantico na linha %d: variavel '%s' nao declarada em atribuicao\n",
+                contaLinha, nome);
+        exit(1);
+    }
     consome(IDENTIFICADOR);
     consome(ATRIBUICAO);
     expr();
@@ -642,6 +701,14 @@ void factor(){
     }else if(lookahead == CHARCONST){
         consome(CHARCONST);
     }else if(lookahead == IDENTIFICADOR){
+        char nome[16];
+        strcpy(nome, info_atomo.atributo_id);
+        if (buscar_simbolo(nome) == NULL) {
+            fprintf(stderr,
+                    "Erro semantico na linha %d: variavel '%s' nao declarada em expressao\n",
+                    contaLinha, nome);
+            exit(1);
+        }
         consome(IDENTIFICADOR);
     }else{
         consome(ABRE_PARENTESES);
