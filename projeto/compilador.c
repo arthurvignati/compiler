@@ -8,6 +8,12 @@ gcc -Wall -Wno-unused-result -g -Og compilador.c -o compilador
 #include <string.h>
 
 
+//declaração de var globais
+char *buffer; //= "    void main ( void ) { if    12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
+char *read_file(const char *file_name);
+    
+int contaLinha = 1;
+
 //DECLARAÇÕES SEMÂNTICO
 typedef struct _TNo {
     char ID[16];
@@ -96,11 +102,7 @@ typedef struct{
 }TInfoAtomo;
 
 
-//declaração de var globais
-char *buffer; //= "    void main ( void ) { if    12.4\n  111.90234  \rvar1\n\n\n\n\nv vA";
-char *read_file(const char *file_name);
-    
-int contaLinha = 1;
+
 
 // declaracao da funcao
 TInfoAtomo obter_atomo();
