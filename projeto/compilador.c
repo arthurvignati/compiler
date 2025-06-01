@@ -14,6 +14,8 @@ char *read_file(const char *file_name);
     
 int contaLinha = 1;
 
+int nivelBloco = 0;
+
 //DECLARAÇÕES SEMÂNTICO
 typedef struct _TNo {
     char ID[16];
@@ -24,6 +26,8 @@ typedef struct _TNo {
 TNo *tabela = NULL;
 
 int proxEndereco = 0;
+
+int contRotulo = 1;
 
 TNo* buscar_simbolo(const char *id) {
     TNo *p = tabela;
@@ -51,6 +55,20 @@ void inserir_simbolo(const char *id) {
     novo->prox = tabela;
     tabela = novo;
 }
+
+int busca_tabela_simbolos(const char *id) {
+    TNo *p = buscar_simbolo(id);
+    if (!p) {
+        fprintf(stderr, "Erro semantico na linha %d: identificador '%s' nao declarado\n", contaLinha, id);
+        exit(1);
+    }
+    return p->endereco;
+}
+
+int prox_rotulo(void) {
+    return contRotulo++;
+}
+
 
 //######## DECLARACOES LEXICO
 //Definições dos átomos
@@ -102,8 +120,6 @@ typedef struct{
 }TInfoAtomo;
 
 
-
-
 // declaracao da funcao
 TInfoAtomo obter_atomo();
 TInfoAtomo reconhece_id();
@@ -111,8 +127,6 @@ TInfoAtomo reconhece_comentario();
 TInfoAtomo reconhece_charconst();
 TInfoAtomo reconhece_intconst();
 //######## FIM DAS DECLARACOES LÉXICO 
-
-
 
 
 //######## DECLARACOES SINTATICO 
@@ -144,22 +158,32 @@ void factor();
 
 
 
+void imprimeTabelaReversa(TNo *p) {
+    if (p == NULL) return;
+    imprimeTabelaReversa(p->prox);
+    printf("%-4s | Endereco : %d\n", p->ID, p->endereco);
+}
+
 int main( int argc, char *argv[]) {
     if (argc < 2){
         printf("Erro: faltou arquivo!\n");
         return 0;
     }
     buffer = read_file(argv[1]);
-    printf("Inicio do programa\n");
+    // printf("Inicio do programa\n");
     info_atomo = obter_atomo();
     
     lookahead = info_atomo.atomo;
-
+    printf("INPP\n");
     program();
     // obter_atomo();
+    printf("PARA\n");
     consome(EOS);
     
-    printf("%d linhas analisadas, programa sintaticamente correto\n", contaLinha);
+    printf("\nTABELA DE SIMBOLOS\n");
+    imprimeTabelaReversa(tabela);
+
+    // printf("%d linhas analisadas, programa sintaticamente correto\n", contaLinha);
     return 0;
 }
 
@@ -211,7 +235,7 @@ TInfoAtomo obter_atomo(void){
         info_atomo.atomo = ATRIBUICAO;
     }
     else if (*buffer == '<' && (*(buffer+1) == '=')){
-        buffer++;
+        buffer+= 2;
         info_atomo.atomo = MENOR_IGUAL;
     }
     else if (*buffer == '<' && (*(buffer+1) != '=')){
@@ -219,12 +243,16 @@ TInfoAtomo obter_atomo(void){
         info_atomo.atomo = MENOR;
     }
     else if (*buffer == '>' && (*(buffer+1) == '=')){
-        buffer++;
+        buffer+= 2;
         info_atomo.atomo = MAIOR_IGUAL;
     }
     else if (*buffer == '>' && (*(buffer+1) != '=')){
         buffer++;
         info_atomo.atomo = MAIOR;
+    }
+    else if (*buffer == '!' && (*(buffer+1) == '=')){
+        buffer+= 2;
+        info_atomo.atomo = DIFERENTE;
     }
     else if (*buffer == '+'){
         buffer++;
@@ -253,7 +281,7 @@ TInfoAtomo obter_atomo(void){
 
     else if(*buffer == '/' && (*(buffer+1) == '*' || *(buffer+1) == '/')){
 
-        printf("# %3d: %s\n", (contaLinha), "comentario");  
+        // printf("# %3d: %s\n", (contaLinha), "comentario");  
         info_atomo = reconhece_comentario();
         info_atomo.linha = contaLinha;
         return obter_atomo();
@@ -507,14 +535,19 @@ void program(){
 }
 
 void compound_stmt(){
+    nivelBloco++;
     consome(ABRE_CHAVES);
     while(lookahead == CHAR || lookahead == INT) {
         var_decl();
+    }
+    if (nivelBloco == 1){
+        printf("AMEM %d\n", proxEndereco);
     }
     while(lookahead == ABRE_CHAVES || lookahead == IDENTIFICADOR || lookahead == IF || lookahead == WHILE || lookahead == READINT || lookahead == WRITEINT ){
         stmt();
     }
     consome(FECHA_CHAVES);
+    nivelBloco--;
 }
 
 
@@ -551,6 +584,8 @@ void variable_id(){
     if (lookahead == ATRIBUICAO){
         consome(ATRIBUICAO);
         expr();
+        int end = busca_tabela_simbolos(nome);
+        printf("ARMZ %d\n", end);
     }
 }
 
@@ -575,13 +610,16 @@ void stmt(){
                     contaLinha, nome);
             exit(1);
         }
+        printf("LEIT\n");
         consome(IDENTIFICADOR);
+        printf("ARMZ %d\n", busca_tabela_simbolos(nome));
         consome(FECHA_PARENTESES);
         consome(PONTO_VIRGULA);
     } else if(lookahead == WRITEINT){
         consome(WRITEINT);
         consome(ABRE_PARENTESES);
         expr();
+        printf("IMPR\n");
         consome(FECHA_PARENTESES);
         consome(PONTO_VIRGULA);
     } 
@@ -600,27 +638,40 @@ void assig_stmt(){
     consome(IDENTIFICADOR);
     consome(ATRIBUICAO);
     expr();
+    printf("ARMZ %d\n", busca_tabela_simbolos(nome));
     consome(PONTO_VIRGULA);
 }
 
 void cond_stmt(){
+    int L1 = prox_rotulo();
+    int L2 = prox_rotulo();
     consome(IF);
     consome(ABRE_PARENTESES);
     expr();
     consome(FECHA_PARENTESES);
+    printf("DSVF L%d\n", L1);
     stmt();
+    printf("DSVS L%d\n", L2);
+    printf("L%d: NADA\n", L1);
     if (lookahead == ELSE){
         consome(ELSE);
         stmt();
     }
+    printf("L%d: NADA\n", L2);
 }
 
 void while_stmt(){
+    int L1 = prox_rotulo();
+    int L2 = prox_rotulo();
+    printf("L%d: NADA\n", L1);
     consome(WHILE);
     consome(ABRE_PARENTESES);
     expr();
     consome(FECHA_PARENTESES);
+    printf("DSVF L%d\n", L2);
     stmt();
+    printf("DSVS L%d\n", L1);
+    printf("L%d: NADA\n", L2);
 }
 
 void expr(){
@@ -628,6 +679,12 @@ void expr(){
     while (lookahead == OR ){
         consome(OR);
         conjunction();
+        printf("SOMA\n");
+        printf("CRCT 0\n");  
+        printf("CMIG\n");
+        printf("CRCT 0\n");
+        printf("CMAG\n"); 
+
     }
 }
 
@@ -636,14 +693,42 @@ void conjunction(){
     while (lookahead == AND){
         consome(AND);
         comparison();
+        printf("MULT\n");      
+        printf("CRCT 0\n");    
+        printf("CMIG\n");      
+        printf("CRCT 0\n");   
+        printf("CMAG\n");     
     }
 }
 
 void comparison(){
     sum();
     if (lookahead == MENOR || lookahead == MENOR_IGUAL || lookahead == IGUAL || lookahead == DIFERENTE || lookahead == MAIOR || lookahead == MAIOR_IGUAL){
+        TAtomo op = lookahead;
         relation();
         sum();
+        switch (op) {
+            case MENOR:
+                printf("CMME\n"); 
+                break;
+            case MENOR_IGUAL:
+                printf("CMEG\n");  
+                break;
+            case IGUAL:
+                printf("CMIG\n");  
+                break;
+            case DIFERENTE:
+                printf("CMDG\n");   
+                break;
+            case MAIOR:
+                printf("CMMA\n");  
+                break;
+            case MAIOR_IGUAL:
+                printf("CMAG\n");   
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -678,10 +763,14 @@ void sum(){
     while(lookahead == MAIS || lookahead == MENOS){
         if(lookahead == MAIS){
             consome(MAIS);
+            term();
+            printf("SOMA\n");
         }else{
             consome(MENOS);
+            term();
+            printf("SUBT\n"); 
         }
-        term();
+        // term();
     }
 }
 
@@ -690,27 +779,36 @@ void term(){
     while(lookahead == MULTIPLICACAO || lookahead == DIVISAO){
         if(lookahead == MULTIPLICACAO){
             consome(MULTIPLICACAO);
+            factor();
+            printf("MULT\n");
         }else{
             consome(DIVISAO);
+            factor();
+            printf("DIVI\n"); 
         }
-        factor();
+        // factor();
     }
 }
 
 void factor(){
     if(lookahead == INTCONST){
+        printf("CRCT %d\n", info_atomo.valorInt);
         consome(INTCONST);
     }else if(lookahead == CHARCONST){
+        printf("CRCT %d\n", (int) info_atomo.valorChar);
         consome(CHARCONST);
     }else if(lookahead == IDENTIFICADOR){
         char nome[16];
         strcpy(nome, info_atomo.atributo_id);
+
         if (buscar_simbolo(nome) == NULL) {
             fprintf(stderr,
                     "Erro semantico na linha %d: variavel '%s' nao declarada em expressao\n",
                     contaLinha, nome);
             exit(1);
         }
+        int end = busca_tabela_simbolos(nome);
+        printf("CRVL %d\n", end);
         consome(IDENTIFICADOR);
     }else{
         consome(ABRE_PARENTESES);
@@ -722,18 +820,18 @@ void factor(){
 
 void consome( TAtomo atomo ){
     while(lookahead == COMENTARIO) {
-        printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_comentario);
+        // printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_comentario);
         info_atomo = obter_atomo();
         lookahead = info_atomo.atomo;
     }
     if( lookahead == atomo ){
-        if(lookahead == IDENTIFICADOR) {
-            printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_id);
-        } else if(lookahead == INTCONST) {
-            printf("# %3d: %s | %d\n", info_atomo.linha, strAtomo[lookahead], info_atomo.valorInt);
-        } else {
-            printf("# %3d: %s\n", info_atomo.linha, strAtomo[lookahead]);
-        }
+        // if(lookahead == IDENTIFICADOR) {
+        //     printf("# %3d: %s | %s\n", info_atomo.linha, strAtomo[lookahead], info_atomo.atributo_id);
+        // } else if(lookahead == INTCONST) {
+        //     printf("# %3d: %s | %d\n", info_atomo.linha, strAtomo[lookahead], info_atomo.valorInt);
+        // } else {
+        //     printf("# %3d: %s\n", info_atomo.linha, strAtomo[lookahead]);
+        // }
         info_atomo = obter_atomo();
         lookahead = info_atomo.atomo;
     }
